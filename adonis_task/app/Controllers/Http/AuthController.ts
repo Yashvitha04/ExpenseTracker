@@ -1,12 +1,19 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from 'App/Models/User'
+import AuthValidator from 'App/Validators/UserValidator'
 
 export default class AuthController {
   public async register({ auth, request, response }: HttpContextContract) {
-    const data = request.only(['username', 'email', 'password'])
+    const validatedData = await request.validate({
+      schema: AuthValidator.authSchema,
+      messages: AuthValidator.messages
+    })
+    if (!validatedData.username) {
+      return response.badRequest({ error: 'Username is required for registration' })
+    }
 
     try {
-      const user = await User.create(data)
+      const user = await User.create(validatedData)
       const token = await auth.use('api').login(user)
       
       return response.created({ 
@@ -19,8 +26,17 @@ export default class AuthController {
   }
 
   public async login({ request, auth, response }: HttpContextContract) {
-    const email = request.input('email')
-    const password = request.input('password')
+
+    const validatedData = await request.validate({
+      schema: AuthValidator.authSchema,
+      messages: AuthValidator.messages
+    })
+    if (validatedData.username) {
+      return response.badRequest({ error: 'Username should not be provided for login' })
+    }
+
+    const email = validatedData.email
+    const password = validatedData.password
 
     try {
       const token = await auth.use('api').attempt(email, password)

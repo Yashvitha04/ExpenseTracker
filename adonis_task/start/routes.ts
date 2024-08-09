@@ -25,18 +25,27 @@ Route.post('/register', 'AuthController.register')
 Route.post('/login', 'AuthController.login')
 
 Route.group(() => {
-  Route.get('/transactions', 'TransactionsController.index')
-  Route.get('/transactions/total', 'TransactionsController.total')
-  Route.post('/transactions', 'TransactionsController.create')
-  Route.put('/transactionsupdate/:id', 'TransactionsController.update')
-  Route.delete('/transactions/:id', 'TransactionsController.delete')
-  Route.get('/transactions/balance', 'TransactionsController.balance')
-  
-  Route.get('/budget', 'BudgetsController.index')
-  Route.get('/budgets/total', 'BudgetsController.total')
-  Route.post('/budget', 'BudgetsController.create')
-  Route.put('/budget/:id', 'BudgetsController.update')
-  Route.delete('/budget/:id', 'BudgetsController.delete')
-}).middleware('auth')
+  Route.get('/', 'TransactionsController.index')
+  Route.get('/total', 'TransactionsController.total')
+  Route.post('/', 'TransactionsController.create')
+  Route.put('/:id', 'TransactionsController.update').where('id', /^[0-9]+$/)
+  Route.delete('/:id', 'TransactionsController.delete').where('id', /^[0-9]+$/)
+  Route.get('/balance', 'TransactionsController.balance')
+}).prefix('/transactions').middleware('auth')
+
+Route.group(() => {
+  Route.get('/', 'BudgetsController.index')
+  Route.get('/total', 'BudgetsController.total')
+  Route.post('/', 'BudgetsController.create')
+  Route.post('/checkOverlaps', 'BudgetsController.checkOverlaps')
+  Route.post('/checkOverlapsEdit/:id', 'BudgetsController.checkOverlapsEdit').where('id', /^[0-9]+$/)
+  Route.put('/:id', 'BudgetsController.update').where('id', /^[0-9]+$/)
+  Route.delete('/:id', 'BudgetsController.delete').where('id', /^[0-9]+$/)
+  Route.get('/category/:categoryName', 'BudgetsController.category')
+  Route.get('/date/:date', 'BudgetsController.filter')
+}).prefix('/budgets').middleware('auth')
+
+
+
 
 

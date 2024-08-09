@@ -16,8 +16,7 @@
       <div v-if="selectedCategory" class="selected-budget-info">
         <h2>{{ selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) }} Budget</h2>
         <h3>Budget: {{ budgets[selectedCategory] }}</h3>
-        <h3>Total Income for {{ selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) }}: {{ income[selectedCategory] }}</h3>
-        <h3>Total Expense for {{ selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) }}: {{ expense[selectedCategory] }}</h3>
+        <h3>Total expense till date: {{ expenses[selectedCategory] }}</h3>
       </div>
     </div>
     <div class="navigation-buttons">
@@ -28,81 +27,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useDashboardStore } from '@/stores/dashboardStore'
+import { storeToRefs } from 'pinia'
 
-const totalAmount = ref(0)
-const budgets = ref({})
-const income = ref({})
-const expense = ref({})
-const selectedCategory = ref('')
-const categories = ['grocery', 'travel', 'entertainment', 'insurance']
+const dashboardStore = useDashboardStore()
+const { totalAmount, budgets, expenses, categories, selectedCategory } = storeToRefs(dashboardStore)
 const router = useRouter()
 
-const fetchDashboardData = async () => {
-  try {
-    const authToken = localStorage.getItem('authToken')
-    const user_id = localStorage.getItem('user_id')
-    const totalResponse = await axios.get('http://127.0.0.1:3333/transactions/total', {
-      headers: {
-        Authorization: `Bearer ${authToken}`
-      }
-    })
-    totalAmount.value = totalResponse.data.totalAmount
-    for (const category of categories) {
-      const budgetResponse = await axios.get(`http://127.0.0.1:3333/budgets/total?category_name=${category}`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`
-        }
-      })
-      budgets.value[category] = budgetResponse.data.totalAmount
-
-      const transactionsResponse = await axios.get(`http://127.0.0.1:3333/transactions/total?category_name=${category}`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`
-        }
-      })
-      const transactions = transactionsResponse.data.transactions
-      income.value[category] = transactions
-        .filter(transaction => transaction.type === 'income')
-        .reduce((total, transaction) => total + transaction.amount, 0)
-      expense.value[category] = transactions
-        .filter(transaction => transaction.type === 'expense')
-        .reduce((total, transaction) => total + transaction.amount, 0)
-    }
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error)
-  }
-}
-
-const fetchBudgetData = async () => {
-  try {
-    if (!selectedCategory.value) return
-    const authToken = localStorage.getItem('authToken')
-    const budgetResponse = await axios.get(`http://127.0.0.1:3333/budgets/total?category_name=${selectedCategory.value}`, {
-      headers: {
-        Authorization: `Bearer ${authToken}`
-      }
-    })
-    budgets.value[selectedCategory.value] = budgetResponse.data.totalAmount
-
-    const transactionsResponse = await axios.get(`http://127.0.0.1:3333/transactions/total?category_name=${selectedCategory.value}`, {
-      headers: {
-        Authorization: `Bearer ${authToken}`
-      }
-    })
-    const transactions = transactionsResponse.data.transactions
-    income.value[selectedCategory.value] = transactions
-      .filter(transaction => transaction.type === 'income')
-      .reduce((total, transaction) => total + transaction.amount, 0)
-    expense.value[selectedCategory.value] = transactions
-      .filter(transaction => transaction.type === 'expense')
-      .reduce((total, transaction) => total + transaction.amount, 0)
-  } catch (error) {
-    console.error('Error fetching budget data:', error)
-  }
-}
+const fetchDashboardData = dashboardStore.fetchDashboardData
+const fetchBudgetData = dashboardStore.fetchBudgetData
 
 const navigateToTransactions = () => {
   router.push('/transactions')
@@ -115,21 +50,36 @@ const navigateToBudgets = () => {
 onMounted(() => {
   fetchDashboardData()
 })
-
-watch(selectedCategory, fetchBudgetData)
 </script>
 
 <style scoped>
+.date-filter {
+  margin-bottom: 20px;
+}
+.date-filter label {
+  margin-right: 10px;
+}
+.date-filter input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  margin-right: 10px;
+}
+
 .dashboard-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  max-width: 800px;
+  width: 1200px;
   margin: 0 auto;
-  background-color: #8ccbe73e;
   text-align: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  height: 630px;
+  background: url("C:\Users\Yashvitha PR\Desktop\Assessment_task\task2_vue\public\expense tracker.png") no-repeat center center;
+  background-size: cover;
+  position: relative;
 }
 
 .total-amount,
@@ -194,5 +144,18 @@ watch(selectedCategory, fetchBudgetData)
 
 .navigation-buttons .btn-secondary:hover {
   background-color: #ddd;
+}
+.date-filter {
+  margin-bottom: 20px;
+}
+.date-filter label {
+  margin-right: 10px;
+}
+.date-filter input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  margin-right: 10px;
 }
 </style>

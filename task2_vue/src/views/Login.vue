@@ -45,7 +45,7 @@ const submitForm = async () => {
       password: form.value.password
     })
 
-    console.log('Response data:', response.data) // Check the response data
+    console.log('Response data:', response.data) 
     if (response.data && response.data.token) {
       localStorage.setItem('authToken', response.data.token.token)
       localStorage.setItem('user_id', response.data.user_id)
@@ -77,10 +77,10 @@ const submitForm = async () => {
   max-width: 800px;
   margin: 0 auto;
   background-color: #8ccbe73e;
-  width: 800px;
+  width: 2000px;
   text-align: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  margin-left: 30%;
+  margin-top: 20%;
 }
 
 .login-form {

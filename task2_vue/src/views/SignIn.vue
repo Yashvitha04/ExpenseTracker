@@ -99,7 +99,7 @@ const togglePasswordVisibility = () => {
   width: 800px;
   text-align: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  margin-left: 30%;
+  margin-top: 10%;
 }
 
 .login-form {

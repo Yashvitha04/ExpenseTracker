@@ -14,20 +14,25 @@
         <div class="header-item">Actions</div>
       </div>
 
-      <div v-for="transaction in transactions" :key="transaction.id" class="table-row">
+      <div v-for="transaction in paginatedTransactions" :key="transaction.transaction_id" class="table-row">
         <div class="table-item">{{ transaction.category_name }}</div>
         <div class="table-item">{{ transaction.type }}</div>
         <div class="table-item">{{ transaction.amount }}</div>
         <div class="table-item">{{ transaction.description }}</div>
         <div class="table-item actions">
-          <v-btn @click="editTransaction(transaction.id)" color="primary" icon>
+          <v-btn @click="editTransaction(transaction)" color="primary" icon>
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
-          <v-btn @click="deleteTransaction(transaction.id)" color="red" icon>
+          <v-btn @click="deleteTransaction(transaction.transaction_id)" color="red" icon>
             <v-icon>mdi-delete</v-icon>
           </v-btn>
-        </div>
+        </div> 
       </div>
+    </div>
+
+    <div class="pagination-controls">
+      <v-btn @click="setPage(currentPage - 1)" :disabled="currentPage === 1">Previous</v-btn>
+      <v-btn @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages">Next</v-btn>
     </div>
 
     <div class="buttons">
@@ -45,7 +50,7 @@
           <span class="headline">{{ isEditing ? 'Edit Transaction' : 'Add Transaction' }}</span>
         </v-card-title>
         <v-card-text>
-          <TransactionForm :transaction="selectedTransaction" @save="fetchTransactions" />
+          <TransactionForm :transaction="selectedTransaction" @save="handleSave" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -57,68 +62,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { storeToRefs } from 'pinia'
+import { useTransactionStore } from '@/stores/transactionStore'
 import TransactionForm from '../components/TransactionForm.vue'
 
-const totalAmount = ref(0)
-const transactions = ref([])
-const transactionDialog = ref(false)
-const isEditing = ref(false)
-const selectedTransaction = ref(null)
+const transactionStore = useTransactionStore()
+const { 
+  totalAmount, 
+  paginatedTransactions, 
+  transactionDialog, 
+  isEditing, 
+  selectedTransaction, 
+  currentPage, 
+  itemsPerPage 
+} = storeToRefs(transactionStore)
+
 const router = useRouter()
 
-const fetchTotalAmount = async () => {
-  try {
-    const response = await axios.get('http://127.0.0.1:3333/transactions/total', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    })
-    totalAmount.value = response.data.totalAmount
-  } catch (error) {
-    console.error('Error fetching total amount:', error)
-  }
-}
+const fetchTotalAmount = transactionStore.fetchTotalAmount
+const fetchTransactions = transactionStore.fetchTransactions
+const editTransaction = transactionStore.editTransaction
+const deleteTransaction = transactionStore.deleteTransaction
+const openTransactionForm = transactionStore.openTransactionForm
+const handleSave = transactionStore.handleSave
+const setPage = transactionStore.setPage
 
-const fetchTransactions = async () => {
-  try {
-    const response = await axios.get('http://127.0.0.1:3333/transactions', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    })
-    transactions.value = response.data.transactions
-  } catch (error) {
-    console.error('Error fetching transactions:', error)
-  }
-}
-
-const editTransaction = (id) => {
-  isEditing.value = true
-  selectedTransaction.value = transactions.value.find(tx => tx.id === id)
-  transactionDialog.value = true
-}
-
-const deleteTransaction = async (id) => {
-  try {
-    await axios.delete(`http://127.0.0.1:3333/transactions/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
-    })
-    fetchTransactions()
-  } catch (error) {
-    console.error('Error deleting transaction:', error)
-  }
-}
-
-const openTransactionForm = () => {
-  isEditing.value = false
-  selectedTransaction.value = null
-  transactionDialog.value = true
-}
+const totalPages = computed(() => Math.ceil(transactionStore.transactions.length / itemsPerPage.value))
 
 const navigateToDashboard = () => {
   router.push('/about')
@@ -136,11 +107,13 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  max-width: 800px;
+  width: 1200px;
   margin: 0 auto;
   background-color: #f5f5f5;
   text-align: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  height: 600px;
+  overflow: auto; 
 }
 
 .total-amount {
@@ -150,6 +123,9 @@ onMounted(() => {
 .transaction-table {
   width: 100%;
   border-collapse: collapse;
+  max-height: 400px; 
+  overflow-y: auto; 
+  display: block;
 }
 
 .table-header {
@@ -162,6 +138,10 @@ onMounted(() => {
 .header-item {
   padding: 10px;
   border-bottom: 1px solid #ddd;
+}
+
+.table-body {
+  display: block;
 }
 
 .table-row {
@@ -177,6 +157,12 @@ onMounted(() => {
 .actions {
   display: flex;
   justify-content: space-around;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
 }
 
 .buttons {

@@ -1,14 +1,15 @@
 <template>
   <v-form @submit.prevent="submitForm">
-    <v-text-field
-      v-model="form.category_name"
-      label="Category Name"
+    <v-select
+      v-model="form.type"
+      :items="['income', 'expense']"
+      label="Type"
       required
     />
     <v-select
-      v-model="form.type"
-      :items="['Income', 'Expense']"
-      label="Type"
+      v-model="form.category_name"
+      :items="categoryOptions"
+      label="Category Name"
       required
     />
     <v-text-field
@@ -26,9 +27,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { ref, watch, computed } from 'vue'
+import { useTransactionStore } from '@/stores/transactionStore'
 
 const props = defineProps({
   transaction: Object
@@ -36,42 +36,50 @@ const props = defineProps({
 
 const emit = defineEmits(['save'])
 
-const router = useRouter()
+const transactionStore = useTransactionStore()
+const saveTransaction = transactionStore.saveTransaction
+
 const isEditing = ref(false)
 const form = ref({
+  id: null,
   category_name: '',
   type: '',
   amount: '',
   description: ''
 })
 
+const categoriesIncome = ['salary', 'others']
+const categoriesExpense = ['Groceries', 'Travel', 'Entertainment', 'Insurance']
+
+const categoryOptions = computed(() => {
+  return form.value.type === 'income' ? categoriesIncome : categoriesExpense
+})
+
 watch(() => props.transaction, (newValue) => {
   if (newValue) {
     isEditing.value = true
-    form.value = { ...newValue }
+    form.value = {
+      id: newValue.transaction_id,
+      category_name: newValue.category_name,
+      type: newValue.type,
+      amount: newValue.amount,
+      description: newValue.description
+    }
+  } else {
+    isEditing.value = false
+    form.value = {
+      id: null,
+      category_name: '',
+      type: '',
+      amount: '',
+      description: ''
+    }
   }
 }, { immediate: true })
 
 const submitForm = async () => {
-  try {
-    if (isEditing.value) {
-      await axios.put(`http://127.0.0.1:3333/transactionsupdate/${form.value.id}`, form.value, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      })
-    } else {
-      await axios.post('http://127.0.0.1:3333/transactions', form.value, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      })
-    }
-    emit('save')
-    router.push('/transactions')
-  } catch (error) {
-    console.error('Error saving transaction:', error)
-  }
+  await saveTransaction(form.value)
+  emit('save')
 }
 </script>
 
@@ -81,3 +89,4 @@ const submitForm = async () => {
   margin: 0 auto;
 }
 </style>
+
