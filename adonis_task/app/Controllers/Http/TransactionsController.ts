@@ -148,7 +148,7 @@ export default class TransactionsController {
     try {
       const transactions = await Transaction.query().where('user_id', user.id)
       const totalIncome = transactions
-        .filter(transaction => transaction.type === 'income')
+        .filter(transaction => transaction.type === 'Income')
         .reduce((total, transaction) => total + transaction.amount, 0)
       const totalExpense = transactions
         .filter(transaction => transaction.type === 'expense')

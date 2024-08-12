@@ -10,6 +10,12 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const expenses = ref<Record<string, number>>({})
   const categories = ref<string[]>(['Groceries', 'Travel', 'Entertainment', 'Insurance'])
   const selectedCategory = ref<string>('')
+  const filteredBudgets = ref<any[]>([]) 
+  const balanceData = ref({
+    totalIncome: 0,
+    totalExpense: 0,
+    balanceAmount: 0
+  })
 
   const fetchDashboardData = async () => {
     try {
@@ -20,6 +26,12 @@ export const useDashboardStore = defineStore('dashboard', () => {
         }
       })
       totalAmount.value = totalResponse.data.totalAmount
+      const balanceResponse = await axios.get(`${url}/transactions/balance`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      })
+      balanceData.value = balanceResponse.data.data
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     }
@@ -50,13 +62,30 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   }
 
+  const fetchBudgetsByDate = async (date: string) => {
+    try {
+      const authToken = localStorage.getItem('authToken')
+      const response = await axios.get(`${url}/budgets/date/${date}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      })
+      filteredBudgets.value = response.data.budgets
+    } catch (error) {
+      console.error('Error fetching budgets by date:', error)
+    }
+  }
+
   return {
     totalAmount,
     budgets,
     expenses,
     categories,
     selectedCategory,
+    filteredBudgets,
+    balanceData, 
     fetchDashboardData,
-    fetchBudgetData
+    fetchBudgetData,
+    fetchBudgetsByDate
   }
 })

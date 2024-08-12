@@ -2,7 +2,7 @@
   <div class="container">
     <h1>Welcome to Your Transactions</h1>
     <div class="total-amount">
-      <h2>Total Amount: {{ totalAmount }}</h2>
+      <h2>Total Transaction Amount: {{ totalAmount }}</h2>
     </div>
 
     <div class="transaction-table">

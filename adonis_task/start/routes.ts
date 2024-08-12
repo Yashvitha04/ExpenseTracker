@@ -41,10 +41,9 @@ Route.group(() => {
   Route.post('/checkOverlapsEdit/:id', 'BudgetsController.checkOverlapsEdit').where('id', /^[0-9]+$/)
   Route.put('/:id', 'BudgetsController.update').where('id', /^[0-9]+$/)
   Route.delete('/:id', 'BudgetsController.delete').where('id', /^[0-9]+$/)
-  Route.get('/category/:categoryName', 'BudgetsController.category')
+  Route.get('/category/:categoryName', 'BudgetsController.category')//.where('categoryName',/^[a-z,A-Z]+$/)
   Route.get('/date/:date', 'BudgetsController.filter')
 }).prefix('/budgets').middleware('auth')
-
 
 
 
